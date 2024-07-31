@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - master
+
     paths:
       - "workshop/**/*"
 
@@ -34,7 +35,7 @@ jobs:
       - name: Install .NET 8 SDK
         uses: actions/setup-dotnet@v4
         with:
-        dotnet-version: 8.x
+          dotnet-version: 8.x
 
       - name: Install .NET Aspire workload
         run: dotnet workload install aspire
@@ -81,12 +82,9 @@ jobs:
           pushd ./workshop
           azd provision --no-prompt
           popd
-        env:
-          AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
 
       - name: Deploy Application
         run: |
           pushd ./workshop
           azd deploy --no-prompt
           popd
-
