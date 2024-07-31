@@ -45,9 +45,9 @@ jobs:
         run: |
           pushd ./workshop
           $appsettings = Get-Content -Path ./AspireYouTubeSummariser.AppHost/appsettings.json | ConvertFrom-Json
-          $appsettings.OpenAI.Endpoint = "${{ secrets.AZURE_OPENAI_ENDPOINT }}"
-          $appsettings.OpenAI.ApiKey = "${{ secrets.AZURE_OPENAI_API_KEY }}"
-          $appsettings.OpenAI.DeploymentName = "${{ secrets.AZURE_OPENAI_DEPLOYMENT_NAME }}"
+          $appsettings.OpenAI.Endpoint = "https://polite-ground-030dc3103.4.azurestaticapps.net/api/v1"
+          $appsettings.OpenAI.ApiKey = "74a7d36e-cff1-4287-b514-a4688aac46a5"
+          $appsettings.OpenAI.DeploymentName = "model-gpt4o-20240513"
           $appsettings | ConvertTo-Json -Depth 100 | Out-File -FilePath ./AspireYouTubeSummariser.AppHost/appsettings.json -Encoding utf8 -Force
           popd
 
