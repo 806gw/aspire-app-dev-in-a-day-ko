@@ -1,17 +1,12 @@
 on:
   workflow_dispatch:
   push:
-    # Run when commits are pushed to mainline branch (main or master)
-    # Set this to the mainline branch you are using
     branches:
       - main
       - master
+    paths:
+      - "workshop/**/*"
 
-# GitHub Actions workflow to deploy to Azure using azd
-# To configure required secrets for connecting to Azure, simply run `azd pipeline config`
-
-# Set up permissions for deploying with secretless Azure federated credentials
-# https://learn.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-portal%2Clinux#set-up-azure-login-with-openid-connect-authentication
 permissions:
   id-token: write
   contents: read
@@ -25,9 +20,29 @@ jobs:
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Install .NET Aspire workload
+        run: dotnet workload install aspire
+
+      - name: Update appsettings.json
+        shell: pwsh
+        run: |
+          pushd ./workshop
+          $appsettings = Get-Content -Path ./AspireYouTubeSummariser.AppHost/appsettings.json | ConvertFrom-Json
+          $appsettings.OpenAI.Endpoint = $env:AZURE_OPENAI_ENDPOINT
+          $appsettings.OpenAI.ApiKey = $env:AZURE_OPENAI_API_KEY
+          $appsettings.OpenAI.DeploymentName = $env:AZURE_OPENAI_DEPLOYMENT_NAME
+          $appsettings | ConvertTo-Json -Depth 100 | Out-File -FilePath ./AspireYouTubeSummariser.AppHost/appsettings.json -Encoding utf8 -Force
+          popd
 
       - name: Install azd
         uses: Azure/setup-azd@v1.0.0
@@ -55,10 +70,21 @@ jobs:
         env:
           AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Initialize Azure project
+        run: |
+          pushd ./workshop
+          azd init --environment $env:AZURE_ENV_NAME --location $env:AZURE_LOCATION
+          popd
+
       - name: Provision Infrastructure
-        run: azd provision --no-prompt
-        env:
-          AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
+        run: |
+          pushd ./workshop
+          azd provision --no-prompt
+          popd
 
       - name: Deploy Application
-        run: azd deploy --no-prompt
+        run: |
+          pushd ./workshop
+          azd deploy --no-prompt
+          popd
+
